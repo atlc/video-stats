@@ -1,6 +1,9 @@
+import * as fs from "fs";
+import * as path from "path";
 import * as cheerio from "cheerio";
-import fs from "fs";
 import urls from "./urls.json";
+
+const cachePath = path.join(__dirname, "./cache.json");
 
 function format(time: number) {
     let toSeconds = Math.round(time / 1000);
@@ -56,6 +59,11 @@ export async function GET() {
             },
         };
 
+        fs.writeFile(cachePath, JSON.stringify(aggregated), (err) => {
+            if (err) {
+                console.log(`Couldn't write posts to cache - ` + err.message);
+            }
+        });
         return Response.json(aggregated);
     } catch (error) {
         return Response.json(error);
