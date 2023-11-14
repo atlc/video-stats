@@ -49,6 +49,7 @@ export default function Home() {
 
     return (
         <main className="flex flex-col items-center justify-between min-h-screen p-6 p-sm-12 p-md-24">
+            {!data && <h1 className="text-center text-red-500">Loading</h1>}
             {data && (
                 <>
                     <h1 className="text-4xl text-center text-cyan-700">
