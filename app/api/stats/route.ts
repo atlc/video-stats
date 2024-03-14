@@ -62,6 +62,8 @@ export async function GET() {
         fs.writeFile(cachePath, JSON.stringify(aggregated), (err) => {
             if (err) {
                 console.log(`Couldn't write posts to cache - ` + err.message);
+            } else {
+                console.log("Wrote to cache successfully");
             }
         });
         return Response.json(aggregated);

@@ -20,6 +20,8 @@ interface AggregatedData {
     };
 }
 
+const CACHE_KEY = "video_cache";
+
 export default function Home() {
     const [data, setData] = useState<AggregatedData>();
 
@@ -28,14 +30,14 @@ export default function Home() {
             .then((res) => res.json())
             .then((data) => {
                 if ("total" in data) {
-                    localStorage.setItem("data", JSON.stringify(data));
+                    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
                     setData(data);
                 }
                 fetch("/api/stats")
                     .then((res) => res.json())
                     .then((data) => {
                         if ("total" in data) {
-                            localStorage.setItem("data", JSON.stringify(data));
+                            localStorage.setItem(CACHE_KEY, JSON.stringify(data));
                             setData(data);
                         }
                     });
@@ -43,6 +45,13 @@ export default function Home() {
     }
 
     useEffect(() => {
+        const cachedData = localStorage.getItem(CACHE_KEY);
+
+        if (cachedData) {
+            setData(JSON.parse(cachedData));
+            console.log("Video stats set from localStorage");
+        }
+
         document.body.className = "bg-slate-900";
         getStats();
     }, []);
