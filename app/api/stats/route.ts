@@ -20,10 +20,12 @@ function format(time: number) {
 }
 
 export async function GET() {
+    console.log(`Attemping to load stats live...`);
+
     try {
         const vids = [];
 
-        for await (const vid of urls) {
+        for await (const [index, vid] of urls.entries()) {
             const res = await fetch(vid);
             const videoHTML = await res.text();
             const selector = cheerio.load(videoHTML);
@@ -42,7 +44,7 @@ export async function GET() {
             const runtimeParsed = runtimeStripped.replace(/[^0-9]/g, "");
             const runtime = runtimeParsed ? parseInt(runtimeParsed) : 0;
 
-            vids.push({ title, url: vid, views, runtime: { ms: runtime, formatted: format(runtime) } });
+            vids.push({ id: index + 1, title, url: vid, views, runtime: { ms: runtime, formatted: format(runtime) } });
         }
 
         const views = vids.reduce((a, b) => a + b.views, 0);
@@ -68,6 +70,9 @@ export async function GET() {
         });
         return Response.json(aggregated);
     } catch (error) {
+        console.log("Unable to gets stats live - an error occurred:");
+        console.log(error);
+
         return Response.json(error);
     }
 }
