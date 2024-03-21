@@ -1,32 +1,18 @@
-import * as fs from "fs";
-import * as path from "path";
 import * as cheerio from "cheerio";
-import urls from "./urls.json";
-
-const cachePath = path.join(__dirname, "./cache.json");
-
-function format(time: number) {
-    let toSeconds = Math.round(time / 1000);
-    let hours: number | string = Math.floor(toSeconds / 3600);
-    let minutes: number | string = (toSeconds % 3600) / 60;
-    let seconds: number | string = Math.round((minutes - Math.floor(minutes)) * 60);
-    minutes = Math.floor(minutes);
-
-    hours = hours < 10 ? `0${hours}` : `${hours}`;
-    minutes = minutes < 10 ? `0${minutes}` : `${minutes}`;
-    seconds = seconds < 10 ? `0${seconds}` : `${seconds}`;
-
-    return `${hours}:${minutes}:${seconds}`;
-}
+import db from "@/app/db";
+import { FullResults, Video } from "@/app/types";
+import time from "@/app/utils/time";
 
 export async function GET() {
     console.log(`Attemping to load stats live...`);
 
     try {
-        const vids = [];
+        const urls = await db.urls.get.all();
 
-        for await (const [index, vid] of urls.entries()) {
-            const res = await fetch(vid);
+        const vids: Video[] = [];
+
+        for await (const { _id, url } of urls) {
+            const res = await fetch(url);
             const videoHTML = await res.text();
             const selector = cheerio.load(videoHTML);
 
@@ -44,30 +30,26 @@ export async function GET() {
             const runtimeParsed = runtimeStripped.replace(/[^0-9]/g, "");
             const runtime = runtimeParsed ? parseInt(runtimeParsed) : 0;
 
-            vids.push({ id: index + 1, title, url: vid, views, runtime: { ms: runtime, formatted: format(runtime) } });
+            const new_entry = { _id, title, url, views, runtime: { ms: runtime, formatted: time.milliseconds.to.HHMMSS(runtime) } };
+
+            vids.push(new_entry);
         }
 
-        const views = vids.reduce((a, b) => a + b.views, 0);
-        const runtime = vids.reduce((a, b) => a + b.runtime.ms, 0);
+        await db.videos.update(vids);
 
-        const aggregated = {
+        const [{ views, ms }] = await db.videos.get.stats();
+
+        const aggregated: FullResults = {
             results: vids,
             total: {
                 views: views.toLocaleString(),
                 runtime: {
-                    ms: runtime,
-                    formatted: format(runtime),
+                    ms,
+                    formatted: time.milliseconds.to.HHMMSS(ms),
                 },
             },
         };
 
-        fs.writeFile(cachePath, JSON.stringify(aggregated), (err) => {
-            if (err) {
-                console.log(`Couldn't write posts to cache - ` + err.message);
-            } else {
-                console.log("Wrote to cache successfully");
-            }
-        });
         return Response.json(aggregated);
     } catch (error) {
         console.log("Unable to gets stats live - an error occurred:");

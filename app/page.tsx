@@ -1,33 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
+import { FullResults } from "./types";
 
-interface AggregatedData {
-    results: {
-        id: number;
-        title: string;
-        url: string;
-        views: number;
-        runtime: {
-            ms: number;
-            formatted: string;
-        };
-    }[];
-    total: {
-        views: string;
-        runtime: {
-            ms: number;
-            formatted: string;
-        };
-    };
-}
-
-type SORT_KEY = "id" | "views" | "runtime";
+type SORT_KEY = "_id" | "views" | "runtime";
 
 const CACHE_KEY = "video_cache";
 
 export default function Home() {
-    const [data, setData] = useState<AggregatedData>();
-    const [sorter, setSorter] = useState<SORT_KEY>("id");
+    const [data, setData] = useState<FullResults>();
+    const [sorter, setSorter] = useState<SORT_KEY>("_id");
 
     useEffect(() => {
         const cachedData = localStorage.getItem(CACHE_KEY);
@@ -85,9 +66,14 @@ export default function Home() {
             const reversed = data!.results.reverse();
             setData({ ...data!, results: reversed });
         } else {
-            const resorted: AggregatedData["results"] = data!.results
+            const resorted: FullResults["results"] = data!.results
                 .map((r) => ({ ...r, runtime: r.runtime.ms }))
-                .sort((a, b) => b[name] - a[name])
+                .sort((a, b) => {
+                    const a_id = parseInt(a._id.toHexString().slice(-6), 16);
+                    const b_id = parseInt(b._id.toHexString().slice(-6), 16);
+
+                    return a_id - b_id;
+                })
                 .map((r) => ({ ...r, runtime: { ms: r.runtime, formatted: format(r.runtime) } }));
             setData({ ...data!, results: resorted });
         }
@@ -104,7 +90,7 @@ export default function Home() {
                     </h1>
 
                     <div className="flex items-center justify-between mt-8">
-                        <button onClick={() => handleSort("id")} className={`p-2 mx-2 text-3xl text-center bg-cyan-${sorter === "id" ? "700" : "900"}`}>
+                        <button onClick={() => handleSort("_id")} className={`p-2 mx-2 text-3xl text-center bg-cyan-${sorter === "_id" ? "700" : "900"}`}>
                             Latest
                         </button>
                         <button onClick={() => handleSort("views")} className={`p-2 mx-2 text-3xl text-center bg-cyan-${sorter === "views" ? "700" : "900"}`}>
