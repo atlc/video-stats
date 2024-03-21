@@ -18,12 +18,15 @@ async function getVideoStats() {
     const total = await videos
         .aggregate<Total>([
             {
-                _id: null,
-                views: { $sum: "$views" },
-                ms: { $sum: "$runtime.ms" },
+                $group: {
+                    _id: null,
+                    views: { $sum: "$views" },
+                    ms: { $sum: "$runtime.ms" },
+                },
             },
         ])
         .toArray();
+
     return total;
 }
 

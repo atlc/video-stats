@@ -11,12 +11,13 @@ export async function GET() {
 
         const vids: Video[] = [];
 
-        for await (const { _id, url } of urls) {
+        for await (const [index, { _id, url }] of urls.entries()) {
             const res = await fetch(url);
             const videoHTML = await res.text();
             const selector = cheerio.load(videoHTML);
 
             const title = selector("title").text();
+            console.log(`(${index + 1}/${urls.length})\t${title}`);
 
             const info = selector("body").text();
 

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { FullResults } from "./types";
+import time from "./utils/time";
 
 type SORT_KEY = "_id" | "views" | "runtime";
 
@@ -9,6 +10,8 @@ const CACHE_KEY = "video_cache";
 export default function Home() {
     const [data, setData] = useState<FullResults>();
     const [sorter, setSorter] = useState<SORT_KEY>("_id");
+    const [showInput, setShowInput] = useState(false);
+    const [newUrl, setNewUrl] = useState("");
 
     useEffect(() => {
         const cachedData = localStorage.getItem(CACHE_KEY);
@@ -22,6 +25,18 @@ export default function Home() {
         getStats();
     }, []);
 
+    function addURL() {
+        fetch("/api/urls", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: newUrl }),
+        })
+            .then((res) => res.json())
+            .then(console.log)
+            .catch(console.error)
+            .finally(() => setNewUrl(""));
+    }
+
     function getStats() {
         fetch("/api/stats/cache")
             .then((res) => {
@@ -29,7 +44,7 @@ export default function Home() {
                 return res.json();
             })
             .then((data) => {
-                if ("total" in data) {
+                if (data && "total" in data) {
                     localStorage.setItem(CACHE_KEY, JSON.stringify(data));
                     setData(data);
                 }
@@ -39,26 +54,12 @@ export default function Home() {
                     .then((data) => {
                         console.log("Retrieved newest data");
                         console.log({ data });
-                        if ("total" in data) {
+                        if (data && "total" in data) {
                             localStorage.setItem(CACHE_KEY, JSON.stringify(data));
                             setData(data);
                         }
                     });
             });
-    }
-
-    function format(time: number) {
-        let toSeconds = Math.round(time / 1000);
-        let hours: number | string = Math.floor(toSeconds / 3600);
-        let minutes: number | string = (toSeconds % 3600) / 60;
-        let seconds: number | string = Math.round((minutes - Math.floor(minutes)) * 60);
-        minutes = Math.floor(minutes);
-
-        hours = hours < 10 ? `0${hours}` : `${hours}`;
-        minutes = minutes < 10 ? `0${minutes}` : `${minutes}`;
-        seconds = seconds < 10 ? `0${seconds}` : `${seconds}`;
-
-        return `${hours}:${minutes}:${seconds}`;
     }
 
     function handleSort(name: SORT_KEY) {
@@ -74,7 +75,7 @@ export default function Home() {
 
                     return a_id - b_id;
                 })
-                .map((r) => ({ ...r, runtime: { ms: r.runtime, formatted: format(r.runtime) } }));
+                .map((r) => ({ ...r, runtime: { ms: r.runtime, formatted: time.milliseconds.to.HHMMSS(r.runtime) } }));
             setData({ ...data!, results: resorted });
         }
         setSorter(name);
@@ -82,6 +83,16 @@ export default function Home() {
 
     return (
         <main className="flex flex-col items-center justify-between min-h-screen p-6 p-sm-12 p-md-24">
+            {showInput && (
+                <div className="mt-10">
+                    <input className="text-black-900" type="text" value={newUrl} onChange={(e) => setNewUrl(e.target.value)} />
+                    <div>
+                        <button onClick={addURL}>Add URL</button>
+                    </div>
+                    <p>Adding {newUrl}</p>
+                </div>
+            )}
+
             {!data && <h1 className="text-center text-red-500">Loading</h1>}
             {data && (
                 <>
