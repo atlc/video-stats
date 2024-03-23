@@ -14,7 +14,7 @@ export async function GET() {
     if (!views || !ms) return NextResponse.json(null, { status: 500 });
 
     const aggregated: FullResults | any = {
-        results: videos,
+        results: videos.reverse(),
         total: {
             views: views.toLocaleString(),
             runtime: {

@@ -17,8 +17,6 @@ export async function GET() {
             const selector = cheerio.load(videoHTML);
 
             const title = selector("title").text();
-            console.log(`(${index + 1}/${urls.length})\t${title}`);
-
             const info = selector("body").text();
 
             const viewCountStrIndex = info.search(/{"viewCount":{"/g);
@@ -26,14 +24,21 @@ export async function GET() {
             const parsed = stripped.match(/\d+/g);
             const views = parsed ? parseInt(parsed.join("")) : 0;
 
+            const publishDateIndex = info.search(/"publishDate":"\d{4}-\d{2}-\d{2}/g);
+            const strippedDate = info.substring(publishDateIndex, publishDateIndex + 50);
+            const dateMatches = strippedDate.match(/\d{4}-\d{2}-\d{2}/g);
+            const [parsedDate] = dateMatches || "";
+
             const runtimeRaw = info.split(/approxDurationMs/g)[1];
             const runtimeStripped = runtimeRaw.substring(0, 15);
             const runtimeParsed = runtimeStripped.replace(/[^0-9]/g, "");
             const runtime = runtimeParsed ? parseInt(runtimeParsed) : 0;
 
-            const new_entry = { _id, title, url, views, runtime: { ms: runtime, formatted: time.milliseconds.to.HHMMSS(runtime) } };
+            const new_entry = { _id, index, title, url, views, date: parsedDate, runtime: { ms: runtime, formatted: time.milliseconds.to.HHMMSS(runtime) } };
 
             vids.push(new_entry);
+
+            console.log(`(${index + 1}/${urls.length})\t[${parsedDate}]\t${views} views\t${title}`);
         }
 
         await db.videos.update(vids);
@@ -41,7 +46,7 @@ export async function GET() {
         const [{ views, ms }] = await db.videos.get.stats();
 
         const aggregated: FullResults = {
-            results: vids,
+            results: vids.reverse(),
             total: {
                 views: views.toLocaleString(),
                 runtime: {

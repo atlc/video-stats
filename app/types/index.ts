@@ -2,9 +2,11 @@ import { ObjectId } from "mongodb";
 
 export interface Video {
     _id: ObjectId;
+    index: number;
     title: string;
     url: string;
     views: number;
+    date: string;
     runtime: {
         ms: number;
         formatted: string;
