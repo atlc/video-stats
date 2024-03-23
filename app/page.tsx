@@ -37,15 +37,26 @@ export default function Home() {
                     setData(data);
                 }
                 console.log("Fetching live data");
+
                 fetch(`/api/stats`)
                     .then((res) => res.json())
-                    .then((data: FullResults) => {
-                        console.log("Retrieved newest data");
-                        console.log({ data });
-                        if (data && "total" in data) {
-                            localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-                            setData(data);
-                        }
+                    .then((data) => {
+                        if (!data.status || data.status !== 202) return;
+                        setTimeout(() => {
+                            fetch("/api/stats/cache")
+                                .then((res) => {
+                                    console.log("Fetching from updated cache");
+                                    return res.json();
+                                })
+                                .then((data) => {
+                                    console.log("Retrieved newest data");
+                                    console.log({ data });
+                                    if (data && "total" in data) {
+                                        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+                                        setData(data);
+                                    }
+                                });
+                        }, 20 * 1000);
                     });
             });
     }

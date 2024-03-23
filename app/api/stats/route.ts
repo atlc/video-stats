@@ -1,13 +1,17 @@
 import * as cheerio from "cheerio";
 import db from "@/app/db";
-import { FullResults, Video } from "@/app/types";
+import { Video } from "@/app/types";
 import time from "@/app/utils/time";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
     console.log(`Attemping to load stats live...`);
+    reloadStats();
+    return Response.json({ message: "Pending", status: 202 });
+}
 
+async function reloadStats() {
     try {
         const urls = await db.urls.get.all();
 
@@ -44,25 +48,8 @@ export async function GET() {
         }
 
         await db.videos.update(vids);
-
-        const [{ views, ms }] = await db.videos.get.stats();
-
-        const aggregated: FullResults = {
-            results: vids.reverse(),
-            total: {
-                views: views.toLocaleString(),
-                runtime: {
-                    ms,
-                    formatted: time.milliseconds.to.HHMMSS(ms),
-                },
-            },
-        };
-
-        return Response.json(aggregated);
     } catch (error) {
         console.log("Unable to gets stats live - an error occurred:");
         console.log(error);
-
-        return Response.json(error);
     }
 }
