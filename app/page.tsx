@@ -40,23 +40,26 @@ export default function Home() {
 
                 fetch(`/api/stats`)
                     .then((res) => res.json())
-                    .then((data) => {
-                        if (!data.status || data.status !== 202) return;
-                        setTimeout(() => {
-                            fetch("/api/stats/cache")
-                                .then((res) => {
-                                    console.log("Fetching from updated cache");
-                                    return res.json();
-                                })
-                                .then((data) => {
-                                    console.log("Retrieved newest data");
-                                    console.log({ data });
-                                    if (data && "total" in data) {
-                                        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-                                        setData(data);
-                                    }
-                                });
-                        }, 20 * 1000);
+                    .then((res) => {
+                        if (res.status && res.status === 202) {
+                            const TIMEOUT_DURATION = 1000 * data.results.length;
+
+                            console.log(`Waiting ${TIMEOUT_DURATION} to grab refreshed cache`);
+
+                            setTimeout(() => {
+                                fetch("/api/stats/cache")
+                                    .then((res) => {
+                                        console.log("Fetching from file cache");
+                                        return res.json();
+                                    })
+                                    .then((data: FullResults) => {
+                                        if (data && "total" in data) {
+                                            localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+                                            setData(data);
+                                        }
+                                    });
+                            }, TIMEOUT_DURATION);
+                        }
                     });
             });
     }

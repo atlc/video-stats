@@ -3,6 +3,8 @@ import { FullResults } from "@/app/types";
 import time from "@/app/utils/time";
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
     const videos = await db.videos.get.all();
     if (!videos) return NextResponse.json(null, { status: 500 });
