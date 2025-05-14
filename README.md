@@ -4,7 +4,7 @@ You need to have [the urls.json file](./urls.json) populated with an array of yo
 interface Results {
     totals: {
         views: number;
-        runtime: string;
+        runtime: Runtime;
     },
     videos: Video[];
 }
@@ -15,9 +15,11 @@ interface Video {
     url: string;
     views: number;
     date: string;
-    runtime: {
-        ms: number;
-        formatted: string;
-    };
+    runtime: Runtime;
 }
+
+interface Runtime {
+    ms: number;
+    formatted: string;
+};
 ```

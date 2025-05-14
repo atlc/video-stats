@@ -24,22 +24,22 @@ export async function getVideoStats(urls: string[]): Promise<Video[]> {
         const [info] = videoHTML.match(/<body[^>]*>([\s\S]*)<\/body>/i) || [""];
 
         const viewCountStrIndex = info.search(/{"viewCount":{"/g);
-        const viewCountStripped = info.substring(viewCountStrIndex, viewCountStrIndex + 50);
+        const viewCountStripped = info?.substring(viewCountStrIndex, viewCountStrIndex + 50);
         const viewCountParsed = viewCountStripped.match(/\d+/g);
         const views = viewCountParsed ? parseInt(viewCountParsed.join("")) : 0;
 
         const publishDateIndex = info.search(/"publishDate":"\d{4}-\d{2}-\d{2}/g);
-        const strippedDate = info.substring(publishDateIndex, publishDateIndex + 50);
+        const strippedDate = info?.substring(publishDateIndex, publishDateIndex + 50);
         const dateMatches = strippedDate.match(/\d{4}-\d{2}-\d{2}/g);
         const [parsedDate] = dateMatches || [""];
 
         // const commentCountStringIndex = info.search(/"contextualInfo":{"/g);
-        // const commentCountStringStripped = info.substring(commentCountStringIndex, commentCountStringIndex + 50);
+        // const commentCountStringStripped = info?.substring(commentCountStringIndex, commentCountStringIndex + 50);
         // const [commentCountParsed] = commentCountStringStripped.match(/\d+/g) || ["0"];
         // const comments = parseInt(commentCountParsed);
 
         const runtimeRaw = info.split(/approxDurationMs/g)[1];
-        const runtimeStripped = runtimeRaw.substring(0, 15);
+        const runtimeStripped = runtimeRaw?.substring(0, 15);
         const runtimeParsed = runtimeStripped.replace(/[^0-9]/g, "");
         const runtime = runtimeParsed ? parseInt(runtimeParsed) : 0;
 
@@ -71,7 +71,7 @@ export async function getVideoStats(urls: string[]): Promise<Video[]> {
 export function getAggregatedVideoStats(videos: Video[]) {
     const { runtime, views } = videos.reduce((a, b) => ({ runtime: a.runtime + b.runtime.ms, views: a.views + b.views   }), { runtime: 0, views: 0 });
 
-    return { views, runtime: formatDuration(runtime) }
+    return { views, runtime: { ms: runtime, formatted: formatDuration(runtime) } }
 }
 
 function formatDuration(ms: number): string {
